@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PetService from '../services/PetService';
 import { Link } from 'react-router-dom';
+
 const PetListComponent = () => {
     const [pets, setPets] = useState([]);
 
@@ -12,7 +13,7 @@ const PetListComponent = () => {
 
     const deletePet = (id) => {
         PetService.deletePet(id).then(() => {
-            setPets(pets.filter(pet => pet.id !== id));
+            setPets(prevPets => prevPets.filter(pet => pet.id !== id));
         });
     };
 
@@ -41,12 +42,12 @@ const PetListComponent = () => {
                         {pets.map(pet => (
                             <tr key={pet.id}>
                                 <td>{pet.name}</td>
-                                <td>{pet.petAnimal}</td>
+                                <td>{pet.animal}</td>
                                 <td>{pet.breed}</td>
                                 <td>{pet.size}</td>
                                 <td>{pet.age}</td>
                                 <td>{pet.weight}</td>
-                                <td>{pet.petSex}</td>
+                                <td>{pet.sex}</td>
                                 <td>
                                     {pet.owners && pet.owners.length > 0
                                         ? pet.owners.map(owner => owner.name).join(', ')
