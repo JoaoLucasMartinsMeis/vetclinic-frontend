@@ -24,11 +24,11 @@ class PetService {
     }
 
     addPetToPetOwner(petId, petOwnerId) {
-        return axios.delete(`${PET_API_BASE_URL}/${petId}`);
+        return axios.put(`${PET_API_BASE_URL}/${petId}/owners/${petOwnerId}`);
     }
-
+    
     removeAssociation(petId, petOwnerId) {
-        return axios.delete(`${PET_API_BASE_URL}/${petId}`);
+        return axios.delete(`${PET_API_BASE_URL}/${petId}/owners/${petOwnerId}`);
     }
 }
 
