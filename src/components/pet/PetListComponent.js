@@ -9,6 +9,8 @@ const PetListComponent = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterSize, setFilterSize] = useState('');
     const [filterSex, setFilterSex] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,13 +25,24 @@ const PetListComponent = () => {
 
     const handleDelete = (id) => {
         if (window.confirm('Are you sure you want to delete this pet?')) {
-            PetService.deletePet(id).then(() => fetchPets());
+            PetService.deletePet(id)
+                .then(() => {
+                    setSuccessMessage('Pet deleted successfully.');
+                    setErrorMessage('');
+                    fetchPets();
+                    setTimeout(() => setSuccessMessage(''), 3000); // limpa após 3s
+                })
+                .catch(() => {
+                    setErrorMessage('Failed to delete pet.');
+                    setSuccessMessage('');
+                    setTimeout(() => setErrorMessage(''), 3000); // limpa após 3s
+                });
         }
     };
 
     const filteredPets = pets.filter(pet =>
         (pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         pet.animal.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            pet.animal.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (filterSize === '' || pet.size === filterSize) &&
         (filterSex === '' || pet.sex === filterSex)
     );
@@ -37,6 +50,13 @@ const PetListComponent = () => {
     return (
         <div className="container mt-5">
             <h2 className="text-center mb-4">Pet List</h2>
+
+            {successMessage && (
+                <div className="alert alert-success text-center">{successMessage}</div>
+            )}
+            {errorMessage && (
+                <div className="alert alert-danger text-center">{errorMessage}</div>
+            )}
 
             <div className="row mb-4">
                 <div className="col-md-4 mb-2">

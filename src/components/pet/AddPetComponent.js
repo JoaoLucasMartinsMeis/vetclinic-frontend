@@ -82,7 +82,14 @@ const AddPetComponent = () => {
                                 <div className="form-group mb-3">
                                     <label>Age:</label>
                                     <div className="input-group">
-                                        <input type="number" className="form-control" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g. 3" />
+                                        <input
+                                            type="number"
+                                            className="form-control"
+                                            value={age}
+                                            onChange={(e) => setAge(e.target.value)}
+                                            placeholder="e.g. 3"
+                                            min="0"
+                                        />
                                         <span className="input-group-text">years</span>
                                     </div>
                                 </div>
@@ -90,10 +97,19 @@ const AddPetComponent = () => {
                                 <div className="form-group mb-3">
                                     <label>Weight:</label>
                                     <div className="input-group">
-                                        <input type="number" step="0.1" className="form-control" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="e.g. 12.5" />
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            className="form-control"
+                                            value={weight}
+                                            onChange={(e) => setWeight(e.target.value)}
+                                            placeholder="e.g. 12.5"
+                                            min="0"
+                                        />
                                         <span className="input-group-text">kg</span>
                                     </div>
                                 </div>
+
 
                                 <div className="form-group mb-4">
                                     <label>Sex:</label>

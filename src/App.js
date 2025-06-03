@@ -1,33 +1,35 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import PetListComponent from './components/PetList';
-import AddPetComponent from './components/AddPet';
-import UpdatePetComponent from './components/UpdatePet';
+import HomeComponent from './components/HomeComponent';
 
-import PetOwnerListComponent from './components/PetOwnerListComponent';
-import AddPetOwnerComponent from './components/AddPetOwnerComponent';
-import UpdatePetOwnerComponent from './components/UpdatePetOwnerComponent';
+import PetListComponent from './components/pet/PetListComponent';
+import AddPetComponent from './components/pet/AddPetComponent';
+import UpdatePetComponent from './components/pet/UpdatePetComponent';
+
+import PetOwnerListComponent from './components/petOwner/PetOwnerListComponent';
+import AddPetOwnerComponent from './components/petOwner/AddPetOwnerComponent';
+import UpdatePetOwnerComponent from './components/petOwner/UpdatePetOwnerComponent';
 
 const App = () => {
     return (
         <Router>
-            <div>
-                <Routes>
-                    {/* Pets */}
-                    <Route path="/pets" element={<PetList />} />
-                    <Route path="/add-pet" element={<AddPet />} />
-                    <Route path="/update-pet/:id" element={<UpdatePet />} />
+            <Routes>
+                <Route path="/" element={<HomeComponent />} />
 
-                    {/* Pet Owners */}
-                    <Route path="/pet-owners" element={<PetOwnerList />} />
-                    <Route path="/add-pet-owner" element={<AddPetOwner />} />
-                    <Route path="/update-pet-owner/:id" element={<UpdatePetOwner />} />
+                {/* Pets */}
+                <Route path="/pets" element={<PetListComponent />} />
+                <Route path="/add-pet" element={<AddPetComponent />} />
+                <Route path="/update-pet/:id" element={<UpdatePetComponent />} />
 
-                    {/* Redirect default to pet list */}
-                    <Route path="*" element={<PetList />} />
-                </Routes>
-            </div>
+                {/* Pet Owners */}
+                <Route path="/pet-owners" element={<PetOwnerListComponent />} />
+                <Route path="/add-pet-owner" element={<AddPetOwnerComponent />} />
+                <Route path="/update-pet-owner/:id" element={<UpdatePetOwnerComponent />} />
+
+                {/* Redirect all unknown routes to Home */}
+                <Route path="*" element={<HomeComponent />} />
+            </Routes>
         </Router>
     );
 };

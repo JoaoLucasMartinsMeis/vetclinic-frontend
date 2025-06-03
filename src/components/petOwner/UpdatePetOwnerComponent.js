@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import PetOwnerService from '../services/PetOwnerService';
+import PetOwnerService from '../../services/petOwner/PetOwnerService';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const UpdatePetOwnerComponent = () => {
@@ -28,7 +28,7 @@ const UpdatePetOwnerComponent = () => {
         const owner = { name, cpf, email, phone, address };
 
         PetOwnerService.updatePetOwner(owner, id).then(() => {
-            navigate('/pet-owners');
+            navigate('/petOwners');
         });
     };
 
