@@ -4,124 +4,211 @@ import { useNavigate } from 'react-router-dom';
 import petAnimalOptions from '../../enums/PetAnimalOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import petSizeOptions from '../../enums/PetSizeOptions';
+import { translate } from '../../utils/translations';
+import Header from '../layout/Header';
 
 const AddPetComponent = () => {
-    const [name, setName] = useState('');
-    const [petAnimal, setAnimal] = useState('');
-    const [breed, setBreed] = useState('');
-    const [size, setSize] = useState('');
-    const [age, setAge] = useState('');
-    const [weight, setWeight] = useState('');
-    const [petSex, setSex] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        animal: '',
+        breed: '',
+        size: '',
+        age: '',
+        weight: '',
+        sex: ''
+    });
 
+    const [errors, setErrors] = useState({});
     const navigate = useNavigate();
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+
+        // Clear error when user starts typing
+        if (errors[name]) {
+            setErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) newErrors.name = translate('Name is required');
+        if (!formData.animal) newErrors.animal = translate('Animal selection is required');
+        if (!formData.size) newErrors.size = translate('Size selection is required');
+        if (!formData.sex) newErrors.sex = translate('Sex selection is required');
+        if (!formData.age || isNaN(formData.age) || formData.age < 0) {
+            newErrors.age = translate('Please enter a valid age');
+        }
+        if (!formData.weight || isNaN(formData.weight) || formData.weight <= 0) {
+            newErrors.weight = translate('Please enter a valid weight');
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const savePet = (e) => {
         e.preventDefault();
 
-        if (isNaN(age) || isNaN(weight)) {
-            alert('Please enter numeric values for age (years) and weight (kg).');
-            return;
-        }
+        if (!validateForm()) return;
 
         const pet = {
-            name,
-            animal: petAnimal,
-            breed,
-            size: size,
-            age: Number(age),
-            weight: Number(weight),
-            sex: petSex
+            ...formData,
+            age: Number(formData.age),
+            weight: Number(formData.weight)
         };
 
-        PetService.createPet(pet).then(() => {
-            navigate('/pets');
-        });
+        PetService.createPet(pet)
+            .then(() => {
+                navigate('/pets');
+            })
+            .catch(error => {
+                console.error('Error saving pet:', error);
+                alert(translate('Failed to save pet'));
+            });
     };
 
     return (
-        <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
-            <div className="container" style={{ paddingTop: '50px' }}>
+        <div style={containerStyle}>
+            <Header title="Add Pet" />
+
+            <div className="container">
                 <div className="row justify-content-center">
-                    <div className="card col-md-6" style={{ border: '1px solid #dee2e6', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
-                        <h3 className="text-center" style={{ backgroundColor: '#6c757d', color: 'white', padding: '15px', borderRadius: '8px 8px 0 0' }}>
-                            Add Pet
-                        </h3>
-                        <div className="card-body" style={{ padding: '30px' }}>
+                    <div className="card col-md-8" style={cardStyle}>
+                        <div className="card-body" style={cardBodyStyle}>
                             <form onSubmit={savePet}>
-                                <div className="form-group mb-3">
-                                    <label>Pet Name:</label>
-                                    <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-                                </div>
+                                <div className="row">
+                                    <div className="col-md-6">
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Pet Name')}:</label>
+                                            <input
+                                                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleInputChange}
+                                                placeholder={translate('Pet Name')}
+                                            />
+                                            {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                                        </div>
 
-                                <div className="form-group mb-3">
-                                    <label>Animal:</label>
-                                    <select className="form-control" value={petAnimal} onChange={(e) => setAnimal(e.target.value)}>
-                                        <option value="">Select Animal</option>
-                                        {Object.entries(petAnimalOptions).map(([value, label]) => (
-                                            <option key={value} value={value}>{label}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Animal')}:</label>
+                                            <select
+                                                className={`form-control ${errors.animal ? 'is-invalid' : ''}`}
+                                                name="animal"
+                                                value={formData.animal}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="">{translate('Select Animal')}</option>
+                                                {Object.entries(petAnimalOptions).map(([value, label]) => (
+                                                    <option key={value} value={value}>{label}</option>
+                                                ))}
+                                            </select>
+                                            {errors.animal && <div className="invalid-feedback">{errors.animal}</div>}
+                                        </div>
 
-                                <div className="form-group mb-3">
-                                    <label>Breed:</label>
-                                    <input className="form-control" value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Breed" />
-                                </div>
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Breed')}:</label>
+                                            <input
+                                                className="form-control"
+                                                name="breed"
+                                                value={formData.breed}
+                                                onChange={handleInputChange}
+                                                placeholder={translate('Breed')}
+                                            />
+                                        </div>
+                                    </div>
 
-                                <div className="form-group mb-3">
-                                    <label>Pet Size:</label>
-                                    <select className="form-control" value={size} onChange={e => setSize(e.target.value)}>
-                                        <option value="">Select Size</option>
-                                        {Object.entries(petSizeOptions).map(([key, label]) => (
-                                            <option key={key} value={key}>{label}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                    <div className="col-md-6">
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Pet Size')}:</label>
+                                            <select
+                                                className={`form-control ${errors.size ? 'is-invalid' : ''}`}
+                                                name="size"
+                                                value={formData.size}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="">{translate('Select Size')}</option>
+                                                {Object.entries(petSizeOptions).map(([value, label]) => (
+                                                    <option key={value} value={value}>{label}</option>
+                                                ))}
+                                            </select>
+                                            {errors.size && <div className="invalid-feedback">{errors.size}</div>}
+                                        </div>
 
-                                <div className="form-group mb-3">
-                                    <label>Age:</label>
-                                    <div className="input-group">
-                                        <input
-                                            type="number"
-                                            className="form-control"
-                                            value={age}
-                                            onChange={(e) => setAge(e.target.value)}
-                                            placeholder="e.g. 3"
-                                            min="0"
-                                        />
-                                        <span className="input-group-text">years</span>
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Age')}:</label>
+                                            <div className="input-group">
+                                                <input
+                                                    type="number"
+                                                    className={`form-control ${errors.age ? 'is-invalid' : ''}`}
+                                                    name="age"
+                                                    value={formData.age}
+                                                    onChange={handleInputChange}
+                                                    placeholder="ex: 3"
+                                                    min="0"
+                                                />
+                                                <span className="input-group-text">{translate('years')}</span>
+                                            </div>
+                                            {errors.age && <div className="invalid-feedback">{errors.age}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Weight')}:</label>
+                                            <div className="input-group">
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    className={`form-control ${errors.weight ? 'is-invalid' : ''}`}
+                                                    name="weight"
+                                                    value={formData.weight}
+                                                    onChange={handleInputChange}
+                                                    placeholder="ex: 12.5"
+                                                    min="0"
+                                                />
+                                                <span className="input-group-text">kg</span>
+                                            </div>
+                                            {errors.weight && <div className="invalid-feedback">{errors.weight}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-4">
+                                            <label style={labelStyle}>{translate('Sex')}:</label>
+                                            <select
+                                                className={`form-control ${errors.sex ? 'is-invalid' : ''}`}
+                                                name="sex"
+                                                value={formData.sex}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="">{translate('Select Sex')}</option>
+                                                {Object.entries(petSexOptions).map(([value, label]) => (
+                                                    <option key={value} value={value}>{label}</option>
+                                                ))}
+                                            </select>
+                                            {errors.sex && <div className="invalid-feedback">{errors.sex}</div>}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="form-group mb-3">
-                                    <label>Weight:</label>
-                                    <div className="input-group">
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            className="form-control"
-                                            value={weight}
-                                            onChange={(e) => setWeight(e.target.value)}
-                                            placeholder="e.g. 12.5"
-                                            min="0"
-                                        />
-                                        <span className="input-group-text">kg</span>
-                                    </div>
+                                <div className="d-grid gap-2">
+                                    <button type="submit" className="btn btn-primary" style={submitButtonStyle}>
+                                        {translate('Save')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => navigate('/pets')}
+                                    >
+                                        {translate('Cancel')}
+                                    </button>
                                 </div>
-
-
-                                <div className="form-group mb-4">
-                                    <label>Sex:</label>
-                                    <select className="form-control" value={petSex} onChange={(e) => setSex(e.target.value)}>
-                                        <option value="">Select Sex</option>
-                                        {Object.entries(petSexOptions).map(([value, label]) => (
-                                            <option key={value} value={value}>{label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <button type="submit" className="btn btn-primary w-100">Save</button>
                             </form>
                         </div>
                     </div>
@@ -131,5 +218,35 @@ const AddPetComponent = () => {
     );
 };
 
-export default AddPetComponent;
+const containerStyle = {
+    backgroundColor: '#f8f9fa',
+    minHeight: '100vh',
+    fontFamily: 'Arial, sans-serif'
+};
 
+const cardStyle = {
+    border: 'none',
+    borderRadius: '15px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'white'
+};
+
+const cardBodyStyle = {
+    padding: '30px'
+};
+
+const labelStyle = {
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: '8px'
+};
+
+const submitButtonStyle = {
+    backgroundColor: '#3498db',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '12px',
+    fontWeight: 'bold'
+};
+
+export default AddPetComponent;

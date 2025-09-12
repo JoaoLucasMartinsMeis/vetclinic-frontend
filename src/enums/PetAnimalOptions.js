@@ -1,16 +1,18 @@
+import { translate } from '../utils/translations';
+
 const petAnimalOptions = {
-    DOG: "Dog",
-    CAT: "Cat",
-    FISH: "Fish",
-    BIRD: "Bird",
-    RABBIT: "Rabbit",
-    HAMSTER: "Hamster",
-    MOUSE: "Mouse",
-    RAT: "Rat",
-    GUINEA_PIG: "Guinea Pig",
-    REPTILE: "Reptile",
-    HEDGEHOG: "Hedgehog",
-    OTHER: "Other"
-  };
-  
-  export default petAnimalOptions;
+  DOG: translate('DOG'),
+  CAT: translate('CAT'),
+  FISH: translate('FISH'),
+  BIRD: translate('BIRD'),
+  RABBIT: translate('RABBIT'),
+  HAMSTER: translate('HAMSTER'),
+  MOUSE: translate('MOUSE'),
+  RAT: translate('RAT'),
+  GUINEA_PIG: translate('GUINEA_PIG'),
+  REPTILE: translate('REPTILE'),
+  HEDGEHOG: translate('HEDGEHOG'),
+  OTHER: translate('OTHER')
+};
+
+export default petAnimalOptions;

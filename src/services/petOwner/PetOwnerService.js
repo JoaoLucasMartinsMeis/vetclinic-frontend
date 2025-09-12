@@ -2,26 +2,95 @@ import axios from 'axios';
 
 const PET_OWNER_API_BASE_URL = 'http://localhost:8080/vetclinic/petOwners';
 
+// Configuração base do axios
+const api = axios.create({
+  baseURL: PET_OWNER_API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Interceptor para tratamento de erros
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error);
+    if (error.response) {
+      throw new Error(error.response.data.message || 'Server error');
+    } else if (error.request) {
+      throw new Error('Network error. Please check your connection.');
+    } else {
+      throw new Error('An unexpected error occurred.');
+    }
+  }
+);
+
 class PetOwnerService {
-    getAllPetOwners() {
-        return axios.get(`${PET_OWNER_API_BASE_URL}/all`);
+    async getAllPetOwners() {
+        try {
+            return await api.get('/all');
+        } catch (error) {
+            throw error;
+        }
     }
     
-    createPetOwner(petOwner) {
-        return axios.post(PET_OWNER_API_BASE_URL, petOwner);
+    async createPetOwner(petOwner) {
+        try {
+            return await api.post('', petOwner);
+        } catch (error) {
+            throw error;
+        }
     }
 
-    getPetOwnerById(petOwnerId) {
-        return axios.get(`${PET_OWNER_API_BASE_URL}/${petOwnerId}`);
+    async getPetOwnerById(petOwnerId) {
+        try {
+            return await api.get(`/${petOwnerId}`);
+        } catch (error) {
+            throw error;
+        }
     }
 
-    updatePetOwner(petOwner, petOwnerId) {
-        return axios.put(`${PET_OWNER_API_BASE_URL}/${petOwnerId}`, petOwner);
+    async updatePetOwner(petOwner, petOwnerId) {
+        try {
+            return await api.put(`/${petOwnerId}`, petOwner);
+        } catch (error) {
+            throw error;
+        }
     }
     
-    deletePetOwner(petOwnerId) {
-        return axios.delete(`${PET_OWNER_API_BASE_URL}/${petOwnerId}`);
-    } 
+    async deletePetOwner(petOwnerId) {
+        try {
+            return await api.delete(`/${petOwnerId}`);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // Métodos para relacionamento com Pets
+    async getPetsByOwner(petOwnerId) {
+        try {
+            return await api.get(`/${petOwnerId}/pets`);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async addPetToOwner(petOwnerId, petId) {
+        try {
+            return await api.post(`/${petOwnerId}/pets/${petId}`);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async removePetFromOwner(petOwnerId, petId) {
+        try {
+            return await api.delete(`/${petOwnerId}/pets/${petId}`);
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 export default new PetOwnerService();

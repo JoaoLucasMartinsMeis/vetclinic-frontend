@@ -1,7 +1,8 @@
+import { translate } from '../utils/translations';
+
 const petSexOptions = {
-    MALE: "Male",
-    FEMALE: "Female"
-  };
-  
-  export default petSexOptions;
-  
+  MALE: translate('MALE'),
+  FEMALE: translate('FEMALE')
+};
+
+export default petSexOptions;

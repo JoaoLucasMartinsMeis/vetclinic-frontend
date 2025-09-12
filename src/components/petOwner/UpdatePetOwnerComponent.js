@@ -1,69 +1,244 @@
 import React, { useEffect, useState } from 'react';
 import PetOwnerService from '../../services/petOwner/PetOwnerService';
 import { useNavigate, useParams } from 'react-router-dom';
+import { translate } from '../../utils/translations';
+import { validateCPF, validateEmail, formatCPF, formatPhone } from '../../utils/validators';
+import Header from '../layout/Header';
 
 const UpdatePetOwnerComponent = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [name, setName] = useState('');
-    const [cpf, setCpf] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [address, setAddress] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        cpf: '',
+        email: '',
+        phone: '',
+        address: ''
+    });
+
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        PetOwnerService.getPetOwnerById(id).then((res) => {
-            const owner = res.data;
-            setName(owner.name);
-            setCpf(owner.cpf);
-            setEmail(owner.email);
-            setPhone(owner.phone);
-            setAddress(owner.address);
-        });
+        PetOwnerService.getPetOwnerById(id)
+            .then((res) => {
+                const owner = res.data;
+                setFormData({
+                    name: owner.name || '',
+                    cpf: formatCPF(owner.cpf || ''),
+                    email: owner.email || '',
+                    phone: formatPhone(owner.phone || ''),
+                    address: owner.address || ''
+                });
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching owner:', error);
+                setLoading(false);
+            });
     }, [id]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        let formattedValue = value;
+
+        // Formatação automática
+        if (name === 'cpf') {
+            formattedValue = formatCPF(value);
+        } else if (name === 'phone') {
+            formattedValue = formatPhone(value);
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            [name]: formattedValue
+        }));
+        
+        if (errors[name]) {
+            setErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        
+        if (!formData.name.trim()) newErrors.name = translate('Name is required');
+        if (!formData.cpf.trim()) newErrors.cpf = translate('CPF is required');
+        else if (!validateCPF(formData.cpf.replace(/\D/g, ''))) newErrors.cpf = translate('Invalid CPF format');
+        if (!formData.email.trim()) newErrors.email = translate('Email is required');
+        else if (!validateEmail(formData.email)) newErrors.email = translate('Invalid email format');
+        if (!formData.phone.trim()) newErrors.phone = translate('Phone is required');
+        if (!formData.address.trim()) newErrors.address = translate('Address is required');
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const updatePetOwner = (e) => {
         e.preventDefault();
-        const owner = { name, cpf, email, phone, address };
 
-        PetOwnerService.updatePetOwner(owner, id).then(() => {
-            navigate('/petOwners');
-        });
+        if (!validateForm()) return;
+
+        const owner = {
+            ...formData,
+            cpf: formData.cpf.replace(/\D/g, ''), // Remove formatação do CPF
+            phone: formData.phone.replace(/\D/g, '') // Remove formatação do telefone
+        };
+
+        PetOwnerService.updatePetOwner(owner, id)
+            .then(() => {
+                navigate('/pet-owners');
+            })
+            .catch(error => {
+                console.error('Error updating owner:', error);
+                alert(translate('Failed to update pet owner'));
+            });
     };
 
+    if (loading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="container mt-4">
-            <div className="card col-md-6 offset-md-3">
-                <h3 className="text-center mt-3">Update Pet Owner</h3>
-                <div className="card-body">
-                    <form onSubmit={updatePetOwner}>
-                        <div className="form-group mb-3">
-                            <label>Name:</label>
-                            <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
+        <div style={containerStyle}>
+            <Header title="Update Pet Owner" />
+            
+            <div className="container">
+                <div className="row justify-content-center">
+                    <div className="card col-md-8" style={cardStyle}>
+                        <div className="card-body" style={cardBodyStyle}>
+                            <form onSubmit={updatePetOwner}>
+                                <div className="row">
+                                    <div className="col-md-6">
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Name')}: *</label>
+                                            <input 
+                                                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleInputChange}
+                                                maxLength="100"
+                                            />
+                                            {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('CPF')}: *</label>
+                                            <input 
+                                                className={`form-control ${errors.cpf ? 'is-invalid' : ''}`}
+                                                name="cpf"
+                                                value={formData.cpf}
+                                                onChange={handleInputChange}
+                                                maxLength="14"
+                                            />
+                                            {errors.cpf && <div className="invalid-feedback">{errors.cpf}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Email')}: *</label>
+                                            <input 
+                                                type="email"
+                                                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                maxLength="100"
+                                            />
+                                            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <div className="form-group mb-3">
+                                            <label style={labelStyle}>{translate('Phone')}: *</label>
+                                            <input 
+                                                className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                maxLength="15"
+                                            />
+                                            {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-4">
+                                            <label style={labelStyle}>{translate('Address')}: *</label>
+                                            <input 
+                                                className={`form-control ${errors.address ? 'is-invalid' : ''}`}
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                maxLength="200"
+                                            />
+                                            {errors.address && <div className="invalid-feedback">{errors.address}</div>}
+                                        </div>
+
+                                        <div className="form-group mb-3">
+                                            <small className="text-muted">* {translate('Required fields')}</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="d-grid gap-2">
+                                    <button type="submit" className="btn btn-success" style={submitButtonStyle}>
+                                        {translate('Save Changes')}
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-secondary"
+                                        onClick={() => navigate('/pet-owners')}
+                                    >
+                                        {translate('Cancel')}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <div className="form-group mb-3">
-                            <label>CPF:</label>
-                            <input className="form-control" value={cpf} onChange={(e) => setCpf(e.target.value)} />
-                        </div>
-                        <div className="form-group mb-3">
-                            <label>Email:</label>
-                            <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </div>
-                        <div className="form-group mb-3">
-                            <label>Phone:</label>
-                            <input className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                        </div>
-                        <div className="form-group mb-4">
-                            <label>Address:</label>
-                            <input className="form-control" value={address} onChange={(e) => setAddress(e.target.value)} />
-                        </div>
-                        <button type="submit" className="btn btn-success w-100">Save</button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     );
+};
+
+const containerStyle = {
+    backgroundColor: '#f8f9fa',
+    minHeight: '100vh',
+    fontFamily: 'Arial, sans-serif'
+};
+
+const cardStyle = {
+    border: 'none',
+    borderRadius: '15px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'white'
+};
+
+const cardBodyStyle = {
+    padding: '30px'
+};
+
+const labelStyle = {
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: '8px'
+};
+
+const submitButtonStyle = {
+    backgroundColor: '#27ae60',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '12px',
+    fontWeight: 'bold'
 };
 
 export default UpdatePetOwnerComponent;

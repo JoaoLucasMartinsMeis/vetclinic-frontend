@@ -1,38 +1,95 @@
-/* Reset básico e tipografia suave */
+:root {
+  --primary-blue: #2c3e50;
+  --light-blue: #3498db;
+  --bright-blue: #2980b9;
+  --white: #ffffff;
+  --orange: #e67e22;
+  --light-orange: #f39c12;
+  --gray-light: #f8f9fa;
+  --gray: #6c757d;
+  --gray-dark: #343a40;
+}
+
 body {
   margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
-  color: #212529;
-  line-height: 1.6;
+  background-color: var(--gray-light);
 }
 
-/* Melhor legibilidade para código */
-code {
-  font-family: 'Fira Code', 'Courier New', Courier, monospace;
-  background-color: #f1f3f5;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.95rem;
+.btn-primary {
+  background-color: var(--light-blue);
+  border-color: var(--light-blue);
 }
 
-/* Links com transição */
-a {
-  color: #0d6efd;
-  text-decoration: none;
-  transition: color 0.2s ease-in-out;
+.btn-primary:hover {
+  background-color: var(--bright-blue);
+  border-color: var(--bright-blue);
 }
 
-a:hover {
-  color: #084298;
+.btn-orange {
+  background-color: var(--orange);
+  border-color: var(--orange);
+  color: white;
 }
 
-/* Utilitários para centralização e espaçamento */
-.container {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 1rem;
+.btn-orange:hover {
+  background-color: var(--light-orange);
+  border-color: var(--light-orange);
+  color: white;
 }
+
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsividade melhorada */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .card {
+    margin: 10px;
+  }
+  
+  .btn-group .btn {
+    margin-bottom: 5px;
+  }
+}
+
+/* Animações suaves */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Melhorias na acessibilidade */
+.btn:focus,
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  border-color: var(--light-blue);
+}
+
+/* Ícones Bootstrap */
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css");
