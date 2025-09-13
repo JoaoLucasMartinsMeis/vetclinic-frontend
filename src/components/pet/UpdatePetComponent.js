@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PetService from '../../services/pet/PetService';
+import PetOwnerService from '../../services/petOwner/PetOwnerService';
 import petAnimalOptions from '../../enums/PetAnimalOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import petSizeOptions from '../../enums/PetSizeOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
+import SearchSelect from '../common/SearchSelect';
 
 const UpdatePetComponent = () => {
     const { id } = useParams();
@@ -21,13 +23,16 @@ const UpdatePetComponent = () => {
         sex: ''
     });
 
+    const [selectedOwners, setSelectedOwners] = useState([]);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        PetService.getPetById(id)
-            .then((res) => {
-                const pet = res.data;
+        const fetchPetData = async () => {
+            try {
+                const petResponse = await PetService.getPetById(id);
+                const pet = petResponse.data;
+                
                 setFormData({
                     name: pet.name || '',
                     animal: pet.animal || '',
@@ -37,12 +42,18 @@ const UpdatePetComponent = () => {
                     weight: pet.weight || '',
                     sex: pet.sex || ''
                 });
+
+                // Busca os donos associados a este pet
+                const ownersResponse = await PetService.getPetOwnersByPet(id);
+                setSelectedOwners(ownersResponse.data || []);
+            } catch (error) {
+                console.error('Error fetching pet data:', error);
+            } finally {
                 setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching pet:', error);
-                setLoading(false);
-            });
+            }
+        };
+
+        fetchPetData();
     }, [id]);
 
     const handleInputChange = (e) => {
@@ -58,6 +69,18 @@ const UpdatePetComponent = () => {
                 [name]: ''
             }));
         }
+    };
+
+    const handleOwnerSelect = (owner) => {
+        setSelectedOwners(prev => [...prev, owner]);
+    };
+
+    const handleOwnerRemove = (ownerId) => {
+        setSelectedOwners(prev => prev.filter(owner => owner.id !== ownerId));
+    };
+
+    const searchOwners = async (term) => {
+        return await PetOwnerService.searchOwnersByName(term);
     };
 
     const validateForm = () => {
@@ -78,7 +101,7 @@ const UpdatePetComponent = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const updatePet = (e) => {
+    const updatePet = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
@@ -89,14 +112,40 @@ const UpdatePetComponent = () => {
             weight: Number(formData.weight)
         };
 
-        PetService.updatePet(pet, id)
-            .then(() => {
-                navigate('/pets');
-            })
-            .catch(error => {
-                console.error('Error updating pet:', error);
-                alert(translate('Failed to update pet'));
-            });
+        try {
+            // Atualiza os dados básicos do pet
+            await PetService.updatePet(pet, id);
+
+            // Atualiza as associações com donos
+            // Primeiro obtém os donos atuais
+            const currentOwnersResponse = await PetService.getPetOwnersByPet(id);
+            const currentOwners = currentOwnersResponse.data || [];
+
+            // Encontra donos para adicionar e remover
+            const ownersToAdd = selectedOwners.filter(newOwner =>
+                !currentOwners.some(current => current.id === newOwner.id)
+            );
+            
+            const ownersToRemove = currentOwners.filter(currentOwner =>
+                !selectedOwners.some(newOwner => newOwner.id === currentOwner.id)
+            );
+
+            // Executa as operações de associação
+            const addPromises = ownersToAdd.map(owner =>
+                PetService.addPetToPetOwner(id, owner.id)
+            );
+
+            const removePromises = ownersToRemove.map(owner =>
+                PetService.removeAssociation(id, owner.id)
+            );
+
+            await Promise.all([...addPromises, ...removePromises]);
+            
+            navigate('/pets');
+        } catch (error) {
+            console.error('Error updating pet:', error);
+            alert(translate('Failed to update pet'));
+        }
     };
 
     if (loading) {
@@ -115,7 +164,7 @@ const UpdatePetComponent = () => {
 
             <div className="container">
                 <div className="row justify-content-center">
-                    <div className="card col-md-8" style={cardStyle}>
+                    <div className="card col-md-10" style={cardStyle}>
                         <div className="card-body" style={cardBodyStyle}>
                             <form onSubmit={updatePet}>
                                 <div className="row">
@@ -156,9 +205,7 @@ const UpdatePetComponent = () => {
                                                 onChange={handleInputChange}
                                             />
                                         </div>
-                                    </div>
 
-                                    <div className="col-md-6">
                                         <div className="form-group mb-3">
                                             <label style={labelStyle}>{translate('Pet Size')}:</label>
                                             <select
@@ -174,7 +221,9 @@ const UpdatePetComponent = () => {
                                             </select>
                                             {errors.size && <div className="invalid-feedback">{errors.size}</div>}
                                         </div>
+                                    </div>
 
+                                    <div className="col-md-6">
                                         <div className="form-group mb-3">
                                             <label style={labelStyle}>{translate('Age')}:</label>
                                             <div className="input-group">
@@ -223,6 +272,16 @@ const UpdatePetComponent = () => {
                                             </select>
                                             {errors.sex && <div className="invalid-feedback">{errors.sex}</div>}
                                         </div>
+
+                                        {/* Campo de busca por donos */}
+                                        <SearchSelect
+                                            label="Donos do Pet:"
+                                            placeholder="Buscar donos por nome..."
+                                            searchFunction={searchOwners}
+                                            onSelect={handleOwnerSelect}
+                                            selectedItems={selectedOwners}
+                                            onRemove={handleOwnerRemove}
+                                        />
                                     </div>
                                 </div>
 

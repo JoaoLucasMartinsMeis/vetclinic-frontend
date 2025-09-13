@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import PetOwnerService from '../../services/petOwner/PetOwnerService';
+import PetService from '../../services/pet/PetService';
 import { useNavigate } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 import { validateCPF, validateEmail, formatCPF, formatPhone } from '../../utils/validators';
 import Header from '../layout/Header';
+import SearchSelect from '../common/SearchSelect';
 
 const AddPetOwnerComponent = () => {
     const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ const AddPetOwnerComponent = () => {
         address: ''
     });
 
+    const [selectedPets, setSelectedPets] = useState([]);
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
@@ -21,7 +24,6 @@ const AddPetOwnerComponent = () => {
         const { name, value } = e.target;
         let formattedValue = value;
 
-        // Formatação automática
         if (name === 'cpf') {
             formattedValue = formatCPF(value);
         } else if (name === 'phone') {
@@ -33,13 +35,24 @@ const AddPetOwnerComponent = () => {
             [name]: formattedValue
         }));
         
-        // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
                 [name]: ''
             }));
         }
+    };
+
+    const handlePetSelect = (pet) => {
+        setSelectedPets(prev => [...prev, pet]);
+    };
+
+    const handlePetRemove = (petId) => {
+        setSelectedPets(prev => prev.filter(pet => pet.id !== petId));
+    };
+
+    const searchPets = async (term) => {
+        return await PetService.searchPetsByName(term);
     };
 
     const validateForm = () => {
@@ -52,30 +65,40 @@ const AddPetOwnerComponent = () => {
         else if (!validateEmail(formData.email)) newErrors.email = translate('Invalid email format');
         if (!formData.phone.trim()) newErrors.phone = translate('Phone is required');
         if (!formData.address.trim()) newErrors.address = translate('Address is required');
-
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const savePetOwner = (e) => {
+    const savePetOwner = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
         const owner = {
             ...formData,
-            cpf: formData.cpf.replace(/\D/g, ''), // Remove formatação do CPF
-            phone: formData.phone.replace(/\D/g, '') // Remove formatação do telefone
+            cpf: formData.cpf.replace(/\D/g, ''),
+            phone: formData.phone.replace(/\D/g, '')
         };
 
-        PetOwnerService.createPetOwner(owner)
-            .then(() => {
-                navigate('/pet-owners');
-            })
-            .catch(error => {
-                console.error('Error saving pet owner:', error);
-                alert(translate('Failed to save pet owner'));
-            });
+        try {
+            // Primeiro cria o dono
+            const response = await PetOwnerService.createPetOwner(owner);
+            const savedOwner = response.data;
+
+            // Depois associa os pets selecionados
+            if (selectedPets.length > 0) {
+                const associationPromises = selectedPets.map(pet =>
+                    PetOwnerService.addPetToOwner(savedOwner.id, pet.id)
+                );
+                await Promise.all(associationPromises);
+            }
+
+            navigate('/pet-owners');
+        } catch (error) {
+            console.error('Error saving pet owner:', error);
+            alert(translate('Failed to save pet owner'));
+        }
     };
 
     return (
@@ -84,7 +107,7 @@ const AddPetOwnerComponent = () => {
             
             <div className="container">
                 <div className="row justify-content-center">
-                    <div className="card col-md-8" style={cardStyle}>
+                    <div className="card col-md-10" style={cardStyle}>
                         <div className="card-body" style={cardBodyStyle}>
                             <form onSubmit={savePetOwner}>
                                 <div className="row">
@@ -156,6 +179,16 @@ const AddPetOwnerComponent = () => {
                                             />
                                             {errors.address && <div className="invalid-feedback">{errors.address}</div>}
                                         </div>
+
+                                        {/* Campo de busca por pets */}
+                                        <SearchSelect
+                                            label="Pets do Dono:"
+                                            placeholder="Buscar pets por nome..."
+                                            searchFunction={searchPets}
+                                            onSelect={handlePetSelect}
+                                            selectedItems={selectedPets}
+                                            onRemove={handlePetRemove}
+                                        />
 
                                         <div className="form-group mb-3">
                                             <small className="text-muted">* {translate('Required fields')}</small>

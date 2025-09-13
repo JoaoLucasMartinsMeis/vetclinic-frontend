@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import PetOwnerService from '../../services/petOwner/PetOwnerService';
+import PetService from '../../services/pet/PetService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 import { validateCPF, validateEmail, formatCPF, formatPhone } from '../../utils/validators';
 import Header from '../layout/Header';
+import SearchSelect from '../common/SearchSelect';
 
 const UpdatePetOwnerComponent = () => {
     const { id } = useParams();
@@ -17,13 +19,16 @@ const UpdatePetOwnerComponent = () => {
         address: ''
     });
 
+    const [selectedPets, setSelectedPets] = useState([]);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        PetOwnerService.getPetOwnerById(id)
-            .then((res) => {
-                const owner = res.data;
+        const fetchOwnerData = async () => {
+            try {
+                const ownerResponse = await PetOwnerService.getPetOwnerById(id);
+                const owner = ownerResponse.data;
+                
                 setFormData({
                     name: owner.name || '',
                     cpf: formatCPF(owner.cpf || ''),
@@ -31,19 +36,24 @@ const UpdatePetOwnerComponent = () => {
                     phone: formatPhone(owner.phone || ''),
                     address: owner.address || ''
                 });
+
+                // Busca os pets associados a este dono
+                const petsResponse = await PetOwnerService.getPetsByOwner(id);
+                setSelectedPets(petsResponse.data || []);
+            } catch (error) {
+                console.error('Error fetching owner data:', error);
+            } finally {
                 setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching owner:', error);
-                setLoading(false);
-            });
+            }
+        };
+
+        fetchOwnerData();
     }, [id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         let formattedValue = value;
 
-        // Formatação automática
         if (name === 'cpf') {
             formattedValue = formatCPF(value);
         } else if (name === 'phone') {
@@ -63,6 +73,18 @@ const UpdatePetOwnerComponent = () => {
         }
     };
 
+    const handlePetSelect = (pet) => {
+        setSelectedPets(prev => [...prev, pet]);
+    };
+
+    const handlePetRemove = (petId) => {
+        setSelectedPets(prev => prev.filter(pet => pet.id !== petId));
+    };
+
+    const searchPets = async (term) => {
+        return await PetService.searchPetsByName(term);
+    };
+
     const validateForm = () => {
         const newErrors = {};
         
@@ -73,30 +95,55 @@ const UpdatePetOwnerComponent = () => {
         else if (!validateEmail(formData.email)) newErrors.email = translate('Invalid email format');
         if (!formData.phone.trim()) newErrors.phone = translate('Phone is required');
         if (!formData.address.trim()) newErrors.address = translate('Address is required');
-
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const updatePetOwner = (e) => {
+    const updatePetOwner = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
         const owner = {
             ...formData,
-            cpf: formData.cpf.replace(/\D/g, ''), // Remove formatação do CPF
-            phone: formData.phone.replace(/\D/g, '') // Remove formatação do telefone
+            cpf: formData.cpf.replace(/\D/g, ''),
+            phone: formData.phone.replace(/\D/g, '')
         };
 
-        PetOwnerService.updatePetOwner(owner, id)
-            .then(() => {
-                navigate('/pet-owners');
-            })
-            .catch(error => {
-                console.error('Error updating owner:', error);
-                alert(translate('Failed to update pet owner'));
-            });
+        try {
+            // Atualiza os dados básicos do dono
+            await PetOwnerService.updatePetOwner(owner, id);
+
+            // Atualiza as associações com pets
+            const currentPetsResponse = await PetOwnerService.getPetsByOwner(id);
+            const currentPets = currentPetsResponse.data || [];
+
+            // Encontra pets para adicionar e remover
+            const petsToAdd = selectedPets.filter(newPet =>
+                !currentPets.some(current => current.id === newPet.id)
+            );
+            
+            const petsToRemove = currentPets.filter(currentPet =>
+                !selectedPets.some(newPet => newPet.id === currentPet.id)
+            );
+
+            // Executa as operações de associação
+            const addPromises = petsToAdd.map(pet =>
+                PetOwnerService.addPetToOwner(id, pet.id)
+            );
+
+            const removePromises = petsToRemove.map(pet =>
+                PetOwnerService.removePetFromOwner(id, pet.id)
+            );
+
+            await Promise.all([...addPromises, ...removePromises]);
+            
+            navigate('/pet-owners');
+        } catch (error) {
+            console.error('Error updating owner:', error);
+            alert(translate('Failed to update pet owner'));
+        }
     };
 
     if (loading) {
@@ -115,7 +162,7 @@ const UpdatePetOwnerComponent = () => {
             
             <div className="container">
                 <div className="row justify-content-center">
-                    <div className="card col-md-8" style={cardStyle}>
+                    <div className="card col-md-10" style={cardStyle}>
                         <div className="card-body" style={cardBodyStyle}>
                             <form onSubmit={updatePetOwner}>
                                 <div className="row">
@@ -182,6 +229,16 @@ const UpdatePetOwnerComponent = () => {
                                             />
                                             {errors.address && <div className="invalid-feedback">{errors.address}</div>}
                                         </div>
+
+                                        {/* Campo de busca por pets */}
+                                        <SearchSelect
+                                            label="Pets do Dono:"
+                                            placeholder="Buscar pets por nome..."
+                                            searchFunction={searchPets}
+                                            onSelect={handlePetSelect}
+                                            selectedItems={selectedPets}
+                                            onRemove={handlePetRemove}
+                                        />
 
                                         <div className="form-group mb-3">
                                             <small className="text-muted">* {translate('Required fields')}</small>

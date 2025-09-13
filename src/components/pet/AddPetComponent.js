@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import PetService from '../../services/pet/PetService';
+import PetOwnerService from '../../services/petOwner/PetOwnerService';
 import { useNavigate } from 'react-router-dom';
 import petAnimalOptions from '../../enums/PetAnimalOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import petSizeOptions from '../../enums/PetSizeOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
+import SearchSelect from '../layout/SearchSelect';
 
 const AddPetComponent = () => {
     const [formData, setFormData] = useState({
@@ -18,6 +20,7 @@ const AddPetComponent = () => {
         sex: ''
     });
 
+    const [selectedOwners, setSelectedOwners] = useState([]);
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
@@ -28,13 +31,24 @@ const AddPetComponent = () => {
             [name]: value
         }));
 
-        // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
                 [name]: ''
             }));
         }
+    };
+
+    const handleOwnerSelect = (owner) => {
+        setSelectedOwners(prev => [...prev, owner]);
+    };
+
+    const handleOwnerRemove = (ownerId) => {
+        setSelectedOwners(prev => prev.filter(owner => owner.id !== ownerId));
+    };
+
+    const searchOwners = async (term) => {
+        return await PetOwnerService.searchOwnersByName(term);
     };
 
     const validateForm = () => {
@@ -55,7 +69,7 @@ const AddPetComponent = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const savePet = (e) => {
+    const savePet = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
@@ -66,14 +80,24 @@ const AddPetComponent = () => {
             weight: Number(formData.weight)
         };
 
-        PetService.createPet(pet)
-            .then(() => {
-                navigate('/pets');
-            })
-            .catch(error => {
-                console.error('Error saving pet:', error);
-                alert(translate('Failed to save pet'));
-            });
+        try {
+            // Primeiro cria o pet
+            const response = await PetService.createPet(pet);
+            const savedPet = response.data;
+
+            // Depois associa os donos selecionados
+            if (selectedOwners.length > 0) {
+                const associationPromises = selectedOwners.map(owner =>
+                    PetService.addPetToPetOwner(savedPet.id, owner.id)
+                );
+                await Promise.all(associationPromises);
+            }
+
+            navigate('/pets');
+        } catch (error) {
+            console.error('Error saving pet:', error);
+            alert(translate('Failed to save pet'));
+        }
     };
 
     return (
@@ -82,13 +106,13 @@ const AddPetComponent = () => {
 
             <div className="container">
                 <div className="row justify-content-center">
-                    <div className="card col-md-8" style={cardStyle}>
+                    <div className="card col-md-10" style={cardStyle}>
                         <div className="card-body" style={cardBodyStyle}>
                             <form onSubmit={savePet}>
                                 <div className="row">
                                     <div className="col-md-6">
                                         <div className="form-group mb-3">
-                                            <label style={labelStyle}>{translate('Pet Name')}:</label>
+                                            <label style={labelStyle}>{translate('Pet Name')}: *</label>
                                             <input
                                                 className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                                                 name="name"
@@ -100,7 +124,7 @@ const AddPetComponent = () => {
                                         </div>
 
                                         <div className="form-group mb-3">
-                                            <label style={labelStyle}>{translate('Animal')}:</label>
+                                            <label style={labelStyle}>{translate('Animal')}: *</label>
                                             <select
                                                 className={`form-control ${errors.animal ? 'is-invalid' : ''}`}
                                                 name="animal"
@@ -125,11 +149,9 @@ const AddPetComponent = () => {
                                                 placeholder={translate('Breed')}
                                             />
                                         </div>
-                                    </div>
 
-                                    <div className="col-md-6">
                                         <div className="form-group mb-3">
-                                            <label style={labelStyle}>{translate('Pet Size')}:</label>
+                                            <label style={labelStyle}>{translate('Pet Size')}: *</label>
                                             <select
                                                 className={`form-control ${errors.size ? 'is-invalid' : ''}`}
                                                 name="size"
@@ -143,9 +165,11 @@ const AddPetComponent = () => {
                                             </select>
                                             {errors.size && <div className="invalid-feedback">{errors.size}</div>}
                                         </div>
+                                    </div>
 
+                                    <div className="col-md-6">
                                         <div className="form-group mb-3">
-                                            <label style={labelStyle}>{translate('Age')}:</label>
+                                            <label style={labelStyle}>{translate('Age')}: *</label>
                                             <div className="input-group">
                                                 <input
                                                     type="number"
@@ -162,7 +186,7 @@ const AddPetComponent = () => {
                                         </div>
 
                                         <div className="form-group mb-3">
-                                            <label style={labelStyle}>{translate('Weight')}:</label>
+                                            <label style={labelStyle}>{translate('Weight')}: *</label>
                                             <div className="input-group">
                                                 <input
                                                     type="number"
@@ -180,7 +204,7 @@ const AddPetComponent = () => {
                                         </div>
 
                                         <div className="form-group mb-4">
-                                            <label style={labelStyle}>{translate('Sex')}:</label>
+                                            <label style={labelStyle}>{translate('Sex')}: *</label>
                                             <select
                                                 className={`form-control ${errors.sex ? 'is-invalid' : ''}`}
                                                 name="sex"
@@ -194,6 +218,16 @@ const AddPetComponent = () => {
                                             </select>
                                             {errors.sex && <div className="invalid-feedback">{errors.sex}</div>}
                                         </div>
+
+                                        {/* Campo de busca por donos */}
+                                        <SearchSelect
+                                            label="Donos do Pet:"
+                                            placeholder="Buscar donos por nome..."
+                                            searchFunction={searchOwners}
+                                            onSelect={handleOwnerSelect}
+                                            selectedItems={selectedOwners}
+                                            onRemove={handleOwnerRemove}
+                                        />
                                     </div>
                                 </div>
 
