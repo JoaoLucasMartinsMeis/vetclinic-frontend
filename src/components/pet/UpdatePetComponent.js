@@ -7,7 +7,7 @@ import petSexOptions from '../../enums/PetSexOptions';
 import petSizeOptions from '../../enums/PetSizeOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
-import SearchSelect from '../common/SearchSelect';
+import SearchSelect from '../layout/SearchSelect';
 
 const UpdatePetComponent = () => {
     const { id } = useParams();
@@ -30,7 +30,7 @@ const UpdatePetComponent = () => {
     useEffect(() => {
         const fetchPetData = async () => {
             try {
-                const petResponse = await PetService.getPetById(id);
+                const petResponse = await PetService.findPetById(id);
                 const pet = petResponse.data;
                 
                 setFormData({

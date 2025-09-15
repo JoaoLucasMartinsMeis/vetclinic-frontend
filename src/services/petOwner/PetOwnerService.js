@@ -76,39 +76,33 @@ class PetOwnerService {
         }
     }
 
-    async addPetToOwner(petOwnerId, petId) {
-        try {
-            return await api.post(`/${petOwnerId}/pets/${petId}`);
-        } catch (error) {
-            throw error;
-        }
+      async addPetToOwner(petOwnerId, petId) {
+    try {
+      // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
+      return await api.post(`/petOwner/${petOwnerId}/pet/${petId}`);
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async removePetFromOwner(petOwnerId, petId) {
-        try {
-            return await api.delete(`/${petOwnerId}/pets/${petId}`);
-        } catch (error) {
-            throw error;
-        }
+  async removePetFromOwner(petOwnerId, petId) {
+    try {
+      // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
+      return await api.delete(`/petOwner/${petOwnerId}/pet/${petId}`);
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async searchOwnersByName(name) {
-        try {
-            return await api.get(`/search?name=${encodeURIComponent(name)}`);
-        } catch (error) {
-            console.error('Error searching owners:', error);
-            throw error;
-        }
+  async searchOwnersByName(name) {
+    try {
+      // CORREÇÃO: A rota correta é "/name?name={nome}"
+      return await api.get(`/name?name=${encodeURIComponent(name)}`);
+    } catch (error) {
+      console.error('Error searching owners:', error);
+      throw error;
     }
-
-    async getPetsByOwner(ownerId) {
-        try {
-            return await api.get(`/${ownerId}/pets`);
-        } catch (error) {
-            console.error('Error fetching pets:', error);
-            throw error;
-        }
-    }
+  }
 }
 
 export default new PetOwnerService();

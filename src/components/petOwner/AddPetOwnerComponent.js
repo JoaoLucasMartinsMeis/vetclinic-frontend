@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 import { validateCPF, validateEmail, formatCPF, formatPhone } from '../../utils/validators';
 import Header from '../layout/Header';
-import SearchSelect from '../common/SearchSelect';
+import SearchSelect from '../layout/SearchSelect';
 
 const AddPetOwnerComponent = () => {
     const [formData, setFormData] = useState({
@@ -51,8 +51,8 @@ const AddPetOwnerComponent = () => {
         setSelectedPets(prev => prev.filter(pet => pet.id !== petId));
     };
 
-    const searchPets = async (term) => {
-        return await PetService.searchPetsByName(term);
+    const findPets = async (term) => {
+        return await PetService.findPetsByName(term);
     };
 
     const validateForm = () => {
@@ -60,7 +60,6 @@ const AddPetOwnerComponent = () => {
         
         if (!formData.name.trim()) newErrors.name = translate('Name is required');
         if (!formData.cpf.trim()) newErrors.cpf = translate('CPF is required');
-        else if (!validateCPF(formData.cpf.replace(/\D/g, ''))) newErrors.cpf = translate('Invalid CPF format');
         if (!formData.email.trim()) newErrors.email = translate('Email is required');
         else if (!validateEmail(formData.email)) newErrors.email = translate('Invalid email format');
         if (!formData.phone.trim()) newErrors.phone = translate('Phone is required');
@@ -184,7 +183,7 @@ const AddPetOwnerComponent = () => {
                                         <SearchSelect
                                             label="Pets do Dono:"
                                             placeholder="Buscar pets por nome..."
-                                            searchFunction={searchPets}
+                                            searchFunction={findPets}
                                             onSelect={handlePetSelect}
                                             selectedItems={selectedPets}
                                             onRemove={handlePetRemove}

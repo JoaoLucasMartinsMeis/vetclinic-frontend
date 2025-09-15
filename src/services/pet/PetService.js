@@ -58,11 +58,11 @@ class PetService {
     }
   }
 
-  async getPetById(petId) {
+  async findPetById(petId) {
     try {
       return await api.get(`/${petId}`);
     } catch (error) {
-      console.error('Error in getPetById:', error);
+      console.error('Error in findPetById:', error);
       throw error;
     }
   }
@@ -87,7 +87,8 @@ class PetService {
 
   async addPetToPetOwner(petId, petOwnerId) {
     try {
-      return await api.put(`/${petId}/owners/${petOwnerId}`);
+      // CORREÇÃO: A rota correta é "/pet/{petId}/petOwner/{petOwnerId}"
+      return await api.post(`/pet/${petId}/petOwner/${petOwnerId}`);
     } catch (error) {
       console.error('Error in addPetToPetOwner:', error);
       throw error;
@@ -96,34 +97,22 @@ class PetService {
 
   async removeAssociation(petId, petOwnerId) {
     try {
-      return await api.delete(`/${petId}/owners/${petOwnerId}`);
+      // CORREÇÃO: A rota correta é "/pet/{petId}/petOwner/{petOwnerId}"
+      return await api.delete(`/pet/${petId}/petOwner/${petOwnerId}`);
     } catch (error) {
       console.error('Error in removeAssociation:', error);
       throw error;
     }
   }
 
-  async getPetsByOwner(petOwnerId) {
-    try {
-      return await api.get(`/owner/${petOwnerId}`);
-    } catch (error) {
-      console.error('Error in getPetsByOwner:', error);
-      throw error;
-    }
-  }
-
-  async searchPetsByName(name) {
-    try {
-      return await api.get(`/search?name=${encodeURIComponent(name)}`);
-    } catch (error) {
-      console.error('Error searching pets:', error);
-      throw error;
-    }
-  }
-
   async getPetOwnersByPet(petId) {
     try {
-      return await api.get(`/${petId}/owners`);
+      // Solução temporária: buscar todos os owners e filtrar
+      const allOwners = await PetOwnerService.getAllPetOwners();
+      const ownersWithPet = allOwners.data.filter(owner => 
+        owner.pets && owner.pets.some(pet => pet.id === petId)
+      );
+      return { data: ownersWithPet };
     } catch (error) {
       console.error('Error fetching pet owners:', error);
       throw error;

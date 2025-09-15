@@ -5,6 +5,7 @@ import petSizeOptions from '../../enums/PetSizeOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
+import SearchSelect from '../layout/SearchSelect';
 
 const PetListComponent = () => {
     const [pets, setPets] = useState([]);

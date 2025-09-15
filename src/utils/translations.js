@@ -64,7 +64,6 @@ export const translations = {
     'Owner List': 'Lista de Donos',
     'Name is required': 'Nome é obrigatório',
     'CPF is required': 'CPF é obrigatório',
-    'Invalid CPF format': 'Formato de CPF inválido',
     'Email is required': 'E-mail é obrigatório',
     'Invalid email format': 'Formato de e-mail inválido',
     'Phone is required': 'Telefone é obrigatório',

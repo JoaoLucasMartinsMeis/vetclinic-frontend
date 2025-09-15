@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 import { formatCPF, formatPhone } from '../../utils/validators';
 import Header from '../layout/Header';
+import SearchSelect from '../layout/SearchSelect';
 
 const PetOwnerListComponent = () => {
     const [owners, setOwners] = useState([]);
