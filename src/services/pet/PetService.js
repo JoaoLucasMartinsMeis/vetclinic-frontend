@@ -1,4 +1,5 @@
 import axios from 'axios';
+import PetOwnerService from '../petOwner/PetOwnerService';
 
 const PET_API_BASE_URL = "http://localhost:8080/vetclinic/pets";
 
@@ -49,6 +50,15 @@ class PetService {
     }
   }
 
+  async findPetsByName(name) {
+        try {
+            return await api.get(`/name?name=${encodeURIComponent(name)}`);
+        } catch (error) {
+            console.error('Error in findPetsByName:', error);
+            throw error;
+        }
+    }
+
   async createPet(pet) {
     try {
       return await api.post('', pet);
@@ -86,38 +96,32 @@ class PetService {
   }
 
   async addPetToPetOwner(petId, petOwnerId) {
-    try {
-      // CORREÇÃO: A rota correta é "/pet/{petId}/petOwner/{petOwnerId}"
-      return await api.post(`/pet/${petId}/petOwner/${petOwnerId}`);
-    } catch (error) {
-      console.error('Error in addPetToPetOwner:', error);
-      throw error;
+        try {
+            return await api.post(`/pet/${petId}/petOwner/${petOwnerId}`);
+        } catch (error) {
+            console.error('Error in addPetToPetOwner:', error);
+            throw error;
+        }
     }
-  }
 
   async removeAssociation(petId, petOwnerId) {
-    try {
-      // CORREÇÃO: A rota correta é "/pet/{petId}/petOwner/{petOwnerId}"
-      return await api.delete(`/pet/${petId}/petOwner/${petOwnerId}`);
-    } catch (error) {
-      console.error('Error in removeAssociation:', error);
-      throw error;
+        try {
+            return await api.delete(`/pet/${petId}/petOwner/${petOwnerId}`);
+        } catch (error) {
+            console.error('Error in removeAssociation:', error);
+            throw error;
+        }
     }
-  }
 
-  async getPetOwnersByPet(petId) {
-    try {
-      // Solução temporária: buscar todos os owners e filtrar
-      const allOwners = await PetOwnerService.getAllPetOwners();
-      const ownersWithPet = allOwners.data.filter(owner => 
-        owner.pets && owner.pets.some(pet => pet.id === petId)
-      );
-      return { data: ownersWithPet };
-    } catch (error) {
-      console.error('Error fetching pet owners:', error);
-      throw error;
+    async getPetOwnersByPet(petId) {
+        try {
+            const response = await api.get(`/${petId}/owners`);
+            return response.data; // Retornar apenas os dados
+        } catch (error) {
+            console.error('Error fetching pet owners:', error);
+            throw error;
+        }
     }
-  }
 }
 
 export default new PetService();

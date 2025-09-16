@@ -5,7 +5,6 @@ import petSizeOptions from '../../enums/PetSizeOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
-import SearchSelect from '../layout/SearchSelect';
 
 const PetListComponent = () => {
     const [pets, setPets] = useState([]);
@@ -15,52 +14,62 @@ const PetListComponent = () => {
     const [filterSex, setFilterSex] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [expandedPets, setExpandedPets] = useState(new Set()); // Para mostrar/ocultar donos
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchPets();
     }, []);
 
-    const fetchPets = () => {
+    const fetchPets = async () => {
         setLoading(true);
         setErrorMessage('');
 
-        PetService.getPets()
-            .then((res) => {
-                setPets(res.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching pets:', error);
-                setErrorMessage(error.message || translate('Failed to load pets'));
-                setLoading(false);
-
-                // Se for erro de conexão, mostra mensagem mais específica
-                if (error.message.includes('Backend não está disponível') ||
-                    error.message.includes('não está respondendo')) {
-                    setErrorMessage(
-                        'Backend não está disponível. ' +
-                        'Certifique-se de que o servidor Spring está rodando na porta 8080. ' +
-                        'Erro: ' + error.message
-                    );
-                }
-            });
+        try {
+            const res = await PetService.getPets();
+            const petsWithOwners = await Promise.all(
+                res.data.map(async (pet) => {
+                    try {
+                        const ownersRes = await PetService.getPetOwnersByPet(pet.id);
+                        return { ...pet, owners: ownersRes.data };
+                    } catch (error) {
+                        console.error(`Error fetching owners for pet ${pet.id}:`, error);
+                        return { ...pet, owners: [] };
+                    }
+                })
+            );
+            setPets(petsWithOwners);
+        } catch (error) {
+            console.error('Error fetching pets:', error);
+            setErrorMessage(error.message || translate('Failed to load pets'));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleDelete = (id, petName) => {
+    const togglePetExpansion = (petId) => {
+        const newExpanded = new Set(expandedPets);
+        if (newExpanded.has(petId)) {
+            newExpanded.delete(petId);
+        } else {
+            newExpanded.add(petId);
+        }
+        setExpandedPets(newExpanded);
+    };
+
+    const handleDelete = async (id, petName) => {
         if (window.confirm(`${translate('Are you sure you want to delete this pet?')} (${petName})`)) {
-            PetService.deletePet(id)
-                .then(() => {
-                    setSuccessMessage(translate('Pet deleted successfully.'));
-                    setErrorMessage('');
-                    fetchPets();
-                    setTimeout(() => setSuccessMessage(''), 3000);
-                })
-                .catch(() => {
-                    setErrorMessage(translate('Failed to delete pet.'));
-                    setSuccessMessage('');
-                    setTimeout(() => setErrorMessage(''), 3000);
-                });
+            try {
+                await PetService.deletePet(id);
+                setSuccessMessage(translate('Pet deleted successfully.'));
+                setErrorMessage('');
+                fetchPets();
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } catch (error) {
+                setErrorMessage(translate('Failed to delete pet.'));
+                setSuccessMessage('');
+                setTimeout(() => setErrorMessage(''), 3000);
+            }
         }
     };
 
@@ -83,7 +92,7 @@ const PetListComponent = () => {
 
     return (
         <div className="container-fluid" style={containerStyle}>
-            <Header title="Pet List" />
+            <Header title="Lista de Pets" />
 
             <div className="container">
                 {successMessage && (
@@ -162,6 +171,7 @@ const PetListComponent = () => {
                             <table className="table table-hover">
                                 <thead style={tableHeaderStyle}>
                                     <tr>
+                                        <th style={{width: '30px'}}></th>
                                         <th>{translate('Pet Name')}</th>
                                         <th>{translate('Animal')}</th>
                                         <th>{translate('Breed')}</th>
@@ -169,40 +179,81 @@ const PetListComponent = () => {
                                         <th>{translate('Age')}</th>
                                         <th>{translate('Weight')}</th>
                                         <th>{translate('Sex')}</th>
+                                        <th>{translate('Owners')}</th>
                                         <th>{translate('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredPets.map((pet) => (
-                                        <tr key={pet.id} style={tableRowStyle}>
-                                            <td style={tableCellStyle}>{pet.name}</td>
-                                            <td style={tableCellStyle}>{pet.animal}</td>
-                                            <td style={tableCellStyle}>{pet.breed}</td>
-                                            <td style={tableCellStyle}>{petSizeOptions[pet.size]}</td>
-                                            <td style={tableCellStyle}>{pet.age} {translate('years')}</td>
-                                            <td style={tableCellStyle}>{pet.weight} kg</td>
-                                            <td style={tableCellStyle}>{petSexOptions[pet.sex]}</td>
-                                            <td style={tableCellStyle}>
-                                                <div className="btn-group" role="group">
+                                        <React.Fragment key={pet.id}>
+                                            <tr style={tableRowStyle}>
+                                                <td style={tableCellStyle}>
                                                     <button
-                                                        className="btn btn-warning btn-sm me-2"
-                                                        onClick={() => navigate(`/update-pet/${pet.id}`)}
-                                                        style={actionButtonStyle}
-                                                        title={translate('Edit')}
+                                                        className="btn btn-sm btn-outline-secondary"
+                                                        onClick={() => togglePetExpansion(pet.id)}
+                                                        style={toggleButtonStyle}
                                                     >
-                                                        <i className="bi bi-pencil"></i>
+                                                        {expandedPets.has(pet.id) ? '−' : '+'}
                                                     </button>
-                                                    <button
-                                                        className="btn btn-danger btn-sm"
-                                                        onClick={() => handleDelete(pet.id, pet.name)}
-                                                        style={actionButtonStyle}
-                                                        title={translate('Delete')}
-                                                    >
-                                                        <i className="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td style={tableCellStyle}>
+                                                    <strong>{pet.name}</strong>
+                                                </td>
+                                                <td style={tableCellStyle}>{pet.animal}</td>
+                                                <td style={tableCellStyle}>{pet.breed || '-'}</td>
+                                                <td style={tableCellStyle}>{petSizeOptions[pet.size]}</td>
+                                                <td style={tableCellStyle}>{pet.age} {translate('years')}</td>
+                                                <td style={tableCellStyle}>{pet.weight} kg</td>
+                                                <td style={tableCellStyle}>{petSexOptions[pet.sex]}</td>
+                                                <td style={tableCellStyle}>
+                                                    <span className="badge bg-info">
+                                                        {pet.owners?.length || 0} dono(s)
+                                                    </span>
+                                                </td>
+                                                <td style={tableCellStyle}>
+                                                    <div className="btn-group" role="group">
+                                                        <button
+                                                            className="btn btn-warning btn-sm me-2"
+                                                            onClick={() => navigate(`/update-pet/${pet.id}`)}
+                                                            style={actionButtonStyle}
+                                                            title={translate('Edit')}
+                                                        >
+                                                            <i className="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-danger btn-sm"
+                                                            onClick={() => handleDelete(pet.id, pet.name)}
+                                                            style={actionButtonStyle}
+                                                            title={translate('Delete')}
+                                                        >
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {expandedPets.has(pet.id) && pet.owners && pet.owners.length > 0 && (
+                                                <tr>
+                                                    <td colSpan="10" style={{backgroundColor: '#f8f9fa', padding: '15px'}}>
+                                                        <div style={ownersContainerStyle}>
+                                                            <h6 style={ownersTitleStyle}>Donos Associados:</h6>
+                                                            <div className="row">
+                                                                {pet.owners.map((owner) => (
+                                                                    <div key={owner.id} className="col-md-4 mb-2">
+                                                                        <div style={ownerCardStyle}>
+                                                                            <strong>{owner.name}</strong>
+                                                                            <br />
+                                                                            <small className="text-muted">
+                                                                                {owner.cpf} • {owner.phone}
+                                                                            </small>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
                                     ))}
                                 </tbody>
                             </table>
@@ -270,6 +321,35 @@ const tableCellStyle = {
 const actionButtonStyle = {
     borderRadius: '6px',
     padding: '5px 10px'
+};
+
+const toggleButtonStyle = {
+    width: '25px',
+    height: '25px',
+    padding: '0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+};
+
+const ownersContainerStyle = {
+    padding: '15px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    border: '1px solid #dee2e6'
+};
+
+const ownersTitleStyle = {
+    color: '#2c3e50',
+    marginBottom: '15px',
+    fontWeight: '600'
+};
+
+const ownerCardStyle = {
+    padding: '10px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '6px',
+    border: '1px solid #e9ecef'
 };
 
 export default PetListComponent;

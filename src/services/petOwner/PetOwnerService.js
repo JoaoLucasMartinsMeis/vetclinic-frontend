@@ -95,14 +95,13 @@ class PetOwnerService {
   }
 
   async searchOwnersByName(name) {
-    try {
-      // CORREÇÃO: A rota correta é "/name?name={nome}"
-      return await api.get(`/name?name=${encodeURIComponent(name)}`);
-    } catch (error) {
-      console.error('Error searching owners:', error);
-      throw error;
+        try {
+            return await api.get(`/name?name=${encodeURIComponent(name)}`);
+        } catch (error) {
+            console.error('Error searching owners:', error);
+            throw error;
+        }
     }
-  }
 }
 
 export default new PetOwnerService();

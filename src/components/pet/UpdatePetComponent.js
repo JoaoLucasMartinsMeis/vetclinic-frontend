@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import PetService from '../../services/pet/PetService';
+import PetService from './../../services/pet/PetService';
 import PetOwnerService from '../../services/petOwner/PetOwnerService';
 import petAnimalOptions from '../../enums/PetAnimalOptions';
 import petSexOptions from '../../enums/PetSexOptions';
