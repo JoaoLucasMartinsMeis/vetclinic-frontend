@@ -75,6 +75,7 @@ export const translations = {
     'Failed to save pet owner': 'Falha ao salvar dono',
     'Failed to update pet owner': 'Falha ao atualizar dono',
     'No owners found': 'Nenhum dono encontrado',
+    'Pet Owners List': 'Lista de Donos',
     
     // Actions
     'Save Changes': 'Salvar Alterações',

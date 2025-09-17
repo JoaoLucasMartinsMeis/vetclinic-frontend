@@ -51,13 +51,13 @@ class PetService {
   }
 
   async findPetsByName(name) {
-        try {
-            return await api.get(`/name?name=${encodeURIComponent(name)}`);
-        } catch (error) {
-            console.error('Error in findPetsByName:', error);
-            throw error;
-        }
+    try {
+      return await api.get(`/name?name=${encodeURIComponent(name)}`);
+    } catch (error) {
+      console.error('Error in findPetsByName:', error);
+      throw error;
     }
+  }
 
   async createPet(pet) {
     try {
@@ -96,32 +96,32 @@ class PetService {
   }
 
   async addPetToPetOwner(petId, petOwnerId) {
-        try {
-            return await api.post(`/pet/${petId}/petOwner/${petOwnerId}`);
-        } catch (error) {
-            console.error('Error in addPetToPetOwner:', error);
-            throw error;
-        }
+    try {
+      return await api.post(`/pet/${petId}/petOwner/${petOwnerId}`);
+    } catch (error) {
+      console.error('Error in addPetToPetOwner:', error);
+      throw error;
     }
+  }
 
   async removeAssociation(petId, petOwnerId) {
-        try {
-            return await api.delete(`/pet/${petId}/petOwner/${petOwnerId}`);
-        } catch (error) {
-            console.error('Error in removeAssociation:', error);
-            throw error;
-        }
+    try {
+      return await api.delete(`/pet/${petId}/petOwner/${petOwnerId}`);
+    } catch (error) {
+      console.error('Error in removeAssociation:', error);
+      throw error;
     }
+  }
 
-    async getPetOwnersByPet(petId) {
-        try {
-            const response = await api.get(`/${petId}/owners`);
-            return response.data; // Retornar apenas os dados
-        } catch (error) {
-            console.error('Error fetching pet owners:', error);
-            throw error;
-        }
+  async getPetOwnersByPet(petId) {
+    try {
+      const response = await api.get(`/${petId}/owners`);
+      return response; // Retornar a resposta completa, não apenas data
+    } catch (error) {
+      console.error('Error fetching pet owners:', error);
+      throw error;
     }
+  }
 }
 
 export default new PetService();

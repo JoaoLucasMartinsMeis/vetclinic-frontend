@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PetOwnerService from '../../services/petOwner/PetOwnerService';
+import PetService from '../../services/pet/PetService';
 import { useNavigate } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 import { formatCPF, formatPhone } from '../../utils/validators';
 import Header from '../layout/Header';
+import petSizeOptions from './../../enums/PetSizeOptions';
+import petSexOptions from './../../enums/PetSexOptions';
 
 const PetOwnerListComponent = () => {
     const [owners, setOwners] = useState([]);
@@ -26,7 +29,20 @@ const PetOwnerListComponent = () => {
                 res.data.map(async (owner) => {
                     try {
                         const petsRes = await PetOwnerService.getPetsByOwner(owner.id);
-                        return { ...owner, pets: petsRes.data };
+                        
+                        const completePets = await Promise.all(
+                            petsRes.data.map(async (pet) => {
+                                try {
+                                    const fullPetRes = await PetService.findPetById(pet.id);
+                                    return fullPetRes.data;
+                                } catch (error) {
+                                    console.error(`Error fetching full details for pet ${pet.id}:`, error);
+                                    return pet;
+                                }
+                            })
+                        );
+                        
+                        return { ...owner, pets: completePets };
                     } catch (error) {
                         console.error(`Error fetching pets for owner ${owner.id}:`, error);
                         return { ...owner, pets: [] };
@@ -42,6 +58,22 @@ const PetOwnerListComponent = () => {
             setLoading(false);
         }
     };
+
+    // FUNÇÃO DE FILTRO - MOVIDA PARA DEPOIS DA DECLARAÇÃO DOS ESTADOS
+    const filteredOwners = owners.filter(owner => {
+        if (!searchTerm.trim()) return true;
+        
+        const searchLower = searchTerm.toLowerCase().trim();
+        const cpfSearch = searchTerm.replace(/\D/g, '');
+        
+        return (
+            owner.name.toLowerCase().includes(searchLower) ||
+            owner.cpf.includes(cpfSearch) ||
+            owner.email.toLowerCase().includes(searchLower) ||
+            owner.phone.includes(cpfSearch) ||
+            (owner.address && owner.address.toLowerCase().includes(searchLower))
+        );
+    });
 
     const toggleOwnerExpansion = (ownerId) => {
         const newExpanded = new Set(expandedOwners);
@@ -70,12 +102,6 @@ const PetOwnerListComponent = () => {
         }
     };
 
-    const filteredOwners = owners.filter(owner =>
-        owner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        owner.cpf.includes(searchTerm.replace(/\D/g, '')) ||
-        owner.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     if (loading) {
         return (
             <div className="container mt-5 text-center">
@@ -89,7 +115,7 @@ const PetOwnerListComponent = () => {
     return (
         <div className="container-fluid" style={containerStyle}>
             <Header title="Donos de Pets" />
-            
+
             <div className="container">
                 {successMessage && (
                     <div className="alert alert-success alert-dismissible fade show">
@@ -107,20 +133,20 @@ const PetOwnerListComponent = () => {
                 {/* Filtros */}
                 <div className="card mb-4" style={filterCardStyle}>
                     <div className="card-body">
-                        <div className="row g-3 align-items-center">
+                        <div className="row g-3">
                             <div className="col-md-8">
                                 <input
                                     type="text"
                                     className="form-control"
-                                    placeholder="Buscar por nome, CPF ou e-mail..."
+                                    placeholder="Buscar por nome, CPF, email, telefone ou endereço..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     style={inputStyle}
                                 />
                             </div>
                             <div className="col-md-4">
-                                <button 
-                                    className="btn btn-primary w-100" 
+                                <button
+                                    className="btn btn-primary w-100"
                                     onClick={() => navigate('/add-pet-owner')}
                                     style={addButtonStyle}
                                 >
@@ -131,14 +157,14 @@ const PetOwnerListComponent = () => {
                     </div>
                 </div>
 
-                {/* Tabela */}
+                {/* Tabela - RENDERIZANDO filteredOwners */}
                 <div className="card" style={tableCardStyle}>
                     <div className="card-body">
                         <div className="table-responsive">
                             <table className="table table-hover">
                                 <thead style={tableHeaderStyle}>
                                     <tr>
-                                        <th style={{width: '30px'}}></th>
+                                        <th style={{ width: '30px' }}></th>
                                         <th>{translate('Name')}</th>
                                         <th>{translate('CPF')}</th>
                                         <th>{translate('Email')}</th>
@@ -204,20 +230,32 @@ const PetOwnerListComponent = () => {
                                             </tr>
                                             {expandedOwners.has(owner.id) && owner.pets && owner.pets.length > 0 && (
                                                 <tr>
-                                                    <td colSpan="8" style={{backgroundColor: '#f8f9fa', padding: '15px'}}>
+                                                    <td colSpan="8" style={{ backgroundColor: '#f8f9fa', padding: '15px' }}>
                                                         <div style={petsContainerStyle}>
                                                             <h6 style={petsTitleStyle}>Pets Associados:</h6>
                                                             <div className="row">
                                                                 {owner.pets.map((pet) => (
-                                                                    <div key={pet.id} className="col-md-4 mb-2">
+                                                                    <div key={pet.id} className="col-md-4 mb-3">
                                                                         <div style={petCardStyle}>
-                                                                            <strong>{pet.name}</strong>
-                                                                            <br />
-                                                                            <small className="text-muted">
-                                                                                {pet.animal} • {pet.breed || 'Sem raça'}
-                                                                                <br />
-                                                                                {pet.age} anos • {pet.weight} kg
-                                                                            </small>
+                                                                            <div className="d-flex justify-content-between align-items-start">
+                                                                                <strong>{pet.name}</strong>
+                                                                                <button
+                                                                                    className="btn btn-sm btn-outline-primary"
+                                                                                    onClick={() => navigate(`/update-pet/${pet.id}`)}
+                                                                                    title="Editar Pet"
+                                                                                >
+                                                                                    <i className="bi bi-pencil"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                            <hr className="my-2" />
+                                                                            <div style={petInfoStyle}>
+                                                                                <div><strong>Animal:</strong> {pet.animal}</div>
+                                                                                <div><strong>Raça:</strong> {pet.breed || 'Não informada'}</div>
+                                                                                <div><strong>Porte:</strong> {petSizeOptions[pet.size] || 'Não informado'}</div>
+                                                                                <div><strong>Idade:</strong> {pet.age || '0'} anos</div>
+                                                                                <div><strong>Peso:</strong> {pet.weight || '0'} kg</div>
+                                                                                <div><strong>Sexo:</strong> {petSexOptions[pet.sex] || 'Não informado'}</div>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -225,7 +263,7 @@ const PetOwnerListComponent = () => {
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            )}
+                                            )}                                
                                         </React.Fragment>
                                     ))}
                                 </tbody>
@@ -234,7 +272,12 @@ const PetOwnerListComponent = () => {
                             {filteredOwners.length === 0 && (
                                 <div className="text-center py-4">
                                     <i className="bi bi-search" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
-                                    <p className="text-muted mt-2">{translate('No owners found')}</p>
+                                    <p className="text-muted mt-2">
+                                        {searchTerm 
+                                            ? translate('No owners found matching your criteria.') 
+                                            : translate('No owners registered yet.')
+                                        }
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -243,6 +286,20 @@ const PetOwnerListComponent = () => {
             </div>
         </div>
     );
+};
+
+const petInfoStyle = {
+    fontSize: '0.85rem',
+    lineHeight: '1.4'
+};
+
+const petCardStyle = {
+    padding: '15px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    border: '1px solid #dee2e6',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    height: '100%'
 };
 
 const containerStyle = {
@@ -316,13 +373,6 @@ const petsTitleStyle = {
     color: '#2c3e50',
     marginBottom: '15px',
     fontWeight: '600'
-};
-
-const petCardStyle = {
-    padding: '10px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '6px',
-    border: '1px solid #e9ecef'
 };
 
 export default PetOwnerListComponent;

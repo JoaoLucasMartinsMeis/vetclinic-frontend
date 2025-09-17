@@ -1,9 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { translate } from '../../utils/translations';
 
 const Header = ({ title }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="header" style={headerStyle}>
@@ -13,20 +16,22 @@ const Header = ({ title }) => {
             <h1 style={titleStyle}>{translate(title)}</h1>
           </div>
           <div className="col-md-6 text-end">
-            <button 
-              className="btn btn-outline-light me-2"
-              onClick={() => navigate('/pets')}
-              style={buttonStyle}
-            >
-              {translate('Pet List')}
-            </button>
-            <button 
-              className="btn btn-orange"
-              onClick={() => navigate('/add-pet')}
-              style={buttonStyle}
-            >
-              + {translate('Add Pet')}
-            </button>
+            <div className="btn-group" role="group">
+              <button
+                className={`btn ${isActive('/pets') ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => navigate('/pets')}
+                style={buttonStyle}
+              >
+                🐕 {translate('Pet List')}
+              </button>
+              <button
+                className={`btn ${isActive('/pet-owners') ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => navigate('/pet-owners')}
+                style={buttonStyle}
+              >
+                👥 {translate('Pet Owners List')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

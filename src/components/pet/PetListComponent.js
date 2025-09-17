@@ -5,6 +5,7 @@ import petSizeOptions from '../../enums/PetSizeOptions';
 import petSexOptions from '../../enums/PetSexOptions';
 import { translate } from '../../utils/translations';
 import Header from '../layout/Header';
+import { formatCPF, formatPhone } from '../../utils/validators';
 
 const PetListComponent = () => {
     const [pets, setPets] = useState([]);
@@ -171,7 +172,7 @@ const PetListComponent = () => {
                             <table className="table table-hover">
                                 <thead style={tableHeaderStyle}>
                                     <tr>
-                                        <th style={{width: '30px'}}></th>
+                                        <th style={{ width: '30px' }}></th>
                                         <th>{translate('Pet Name')}</th>
                                         <th>{translate('Animal')}</th>
                                         <th>{translate('Breed')}</th>
@@ -233,18 +234,30 @@ const PetListComponent = () => {
                                             </tr>
                                             {expandedPets.has(pet.id) && pet.owners && pet.owners.length > 0 && (
                                                 <tr>
-                                                    <td colSpan="10" style={{backgroundColor: '#f8f9fa', padding: '15px'}}>
+                                                    <td colSpan="10" style={{ backgroundColor: '#f8f9fa', padding: '15px' }}>
                                                         <div style={ownersContainerStyle}>
                                                             <h6 style={ownersTitleStyle}>Donos Associados:</h6>
                                                             <div className="row">
                                                                 {pet.owners.map((owner) => (
-                                                                    <div key={owner.id} className="col-md-4 mb-2">
+                                                                    <div key={owner.id} className="col-md-4 mb-3">
                                                                         <div style={ownerCardStyle}>
-                                                                            <strong>{owner.name}</strong>
-                                                                            <br />
-                                                                            <small className="text-muted">
-                                                                                {owner.cpf} • {owner.phone}
-                                                                            </small>
+                                                                            <div className="d-flex justify-content-between align-items-start">
+                                                                                <strong>{owner.name}</strong>
+                                                                                <button
+                                                                                    className="btn btn-sm btn-outline-primary"
+                                                                                    onClick={() => navigate(`/update-pet-owner/${owner.id}`)}
+                                                                                    title="Editar Dono"
+                                                                                >
+                                                                                    <i className="bi bi-pencil"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                            <hr className="my-2" />
+                                                                            <div style={ownerInfoStyle}>
+                                                                                <div><strong>CPF:</strong> {formatCPF(owner.cpf)}</div>
+                                                                                <div><strong>Email:</strong> {owner.email}</div>
+                                                                                <div><strong>Telefone:</strong> {formatPhone(owner.phone)}</div>
+                                                                                <div><strong>Endereço:</strong> {owner.address}</div>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -270,6 +283,20 @@ const PetListComponent = () => {
             </div>
         </div>
     );
+};
+
+const ownerInfoStyle = {
+    fontSize: '0.85rem',
+    lineHeight: '1.4'
+};
+
+const ownerCardStyle = {
+    padding: '15px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    border: '1px solid #dee2e6',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    height: '100%'
 };
 
 const containerStyle = {
@@ -343,13 +370,6 @@ const ownersTitleStyle = {
     color: '#2c3e50',
     marginBottom: '15px',
     fontWeight: '600'
-};
-
-const ownerCardStyle = {
-    padding: '10px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '6px',
-    border: '1px solid #e9ecef'
 };
 
 export default PetListComponent;

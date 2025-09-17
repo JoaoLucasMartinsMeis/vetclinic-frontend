@@ -5,8 +5,8 @@ const petSizeOptions = {
   SMALL: translate('SMALL'),
   MEDIUM: translate('MEDIUM'),
   LARGE: translate('LARGE'),
-  X_LARGE: translate('X_LARGE'),
-  XX_LARGE: translate('XX_LARGE')
+  XLARGE: translate('X_LARGE'),
+  XXLARGE: translate('XX_LARGE')
 };
 
 export default petSizeOptions;

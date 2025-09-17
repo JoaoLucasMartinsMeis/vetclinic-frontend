@@ -67,34 +67,33 @@ class PetOwnerService {
         }
     }
 
-    // Métodos para relacionamento com Pets
     async getPetsByOwner(petOwnerId) {
         try {
-            return await api.get(`/${petOwnerId}/pets`);
+            return await api.get(`/${petOwnerId}/pets`); // Retornar resposta completa
         } catch (error) {
             throw error;
         }
     }
 
-      async addPetToOwner(petOwnerId, petId) {
-    try {
-      // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
-      return await api.post(`/petOwner/${petOwnerId}/pet/${petId}`);
-    } catch (error) {
-      throw error;
+    async addPetToOwner(petOwnerId, petId) {
+        try {
+            // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
+            return await api.post(`/petOwner/${petOwnerId}/pet/${petId}`);
+        } catch (error) {
+            throw error;
+        }
     }
-  }
 
-  async removePetFromOwner(petOwnerId, petId) {
-    try {
-      // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
-      return await api.delete(`/petOwner/${petOwnerId}/pet/${petId}`);
-    } catch (error) {
-      throw error;
+    async removePetFromOwner(petOwnerId, petId) {
+        try {
+            // CORREÇÃO: A rota correta é "/petOwner/{petOwnerId}/pet/{petId}"
+            return await api.delete(`/petOwner/${petOwnerId}/pet/${petId}`);
+        } catch (error) {
+            throw error;
+        }
     }
-  }
 
-  async searchOwnersByName(name) {
+    async searchOwnersByName(name) {
         try {
             return await api.get(`/name?name=${encodeURIComponent(name)}`);
         } catch (error) {
